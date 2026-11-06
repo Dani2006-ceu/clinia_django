@@ -1,0 +1,85 @@
+{% extends "control/base.html" %}
+{% load static %}
+{% block titulo %}Dashboard{% endblock %}
+{% block encabezado %}Dashboard{% endblock %}
+{% block contenido %}
+<section class="bienvenida">
+  <div><h2>Hola, {{ user.first_name|default:user.username }}</h2><p class="subtitulo">Resumen del consultorio al {{ hoy|date:"d/m/Y" }}</p></div>
+  <img src="{% static 'control/img/' %}banner.png" alt="">
+</section>
+
+<section class="tarjetas">
+  {% for i in indicadores %}
+    <a class="tarjeta" href="{% url 'listado' i.slug %}">
+      <img class="tarjeta-ico" src="{% static 'control/img/' %}{{ i.slug }}.png" alt=""><span class="tarjeta-titulo">{{ i.titulo }}</span>
+      <span class="tarjeta-valor">{{ i.valor }}</span>
+      <span class="tarjeta-detalle">{{ i.detalle }}</span>
+    </a>
+  {% empty %}
+    <div class="panel">Su usuario aún no tiene un rol asignado. Contacte al administrador.</div>
+  {% endfor %}
+  {% if ingresos_mes is not None %}
+    <div class="tarjeta">
+      <span class="tarjeta-titulo">Tratamientos del mes</span>
+      <span class="tarjeta-valor">S/ {{ ingresos_mes|floatformat:2 }}</span>
+      <span class="tarjeta-detalle">En proceso y finalizados</span>
+    </div>
+  {% endif %}
+  {% if cobrado_mes is not None %}
+    <a class="tarjeta" href="{% url 'listado' 'pagos' %}">
+      <img class="tarjeta-ico" src="{% static 'control/img/' %}pagos.png" alt="">
+      <span class="tarjeta-titulo">Cobrado este mes</span>
+      <span class="tarjeta-valor">S/ {{ cobrado_mes|floatformat:2 }}</span>
+      <span class="tarjeta-detalle">Por cobrar: S/ {{ por_cobrar|floatformat:2 }}</span>
+    </a>
+  {% endif %}
+  {% if por_confirmar is not None %}
+    <a class="tarjeta" href="{% url 'crm' %}">
+      <img class="tarjeta-ico" src="{% static 'control/img/' %}crm.png" alt="">
+      <span class="tarjeta-titulo">Por confirmar</span>
+      <span class="tarjeta-valor">{{ por_confirmar }}</span>
+      <span class="tarjeta-detalle">Citas pendientes hoy y mañana</span>
+    </a>
+  {% endif %}
+</section>
+
+{% if stock_bajo %}
+<div class="alerta alerta-error">
+  <strong>Inventario:</strong> {{ stock_bajo|length }} insumo{{ stock_bajo|length|pluralize }} con stock bajo —
+  {% for i in stock_bajo %}{{ i.nombre }} ({{ i.stock }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+  <a href="{% url 'listado' 'insumos' %}">Ver inventario</a>
+</div>
+{% endif %}
+
+{% if citas_estado %}
+<section class="grid-panel">
+  <div class="panel">
+    <h2>Citas por estado</h2>
+    <ul class="barras">
+      {% for c in citas_estado %}
+        <li><span class="barra-etq">{{ c.estado }}</span>
+          <span class="barra"><span class="barra-relleno relleno-{{ c.clase }}" style="width: {{ c.pct }}%"></span></span>
+          <span class="barra-num">{{ c.n }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="panel">
+    <h2>Próximas citas</h2>
+    {% if proximas %}
+      <div class="tabla-wrap"><table class="tabla">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Odontólogo</th><th>Estado</th></tr></thead>
+        <tbody>
+        {% for c in proximas %}
+          <tr><td data-label="Fecha">{{ c.fecha|date:"d/m/Y" }}</td><td data-label="Hora">{{ c.hora|time:"H:i" }}</td>
+              <td data-label="Paciente">{{ c.paciente.nombre_completo }}</td><td data-label="Odontólogo">{{ c.odontologo }}</td>
+              <td data-label="Estado"><span class="badge badge-{{ c.estado|slugify }}">{{ c.estado }}</span></td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    {% else %}
+      <p class="vacio">No hay citas próximas.</p>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

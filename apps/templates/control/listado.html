@@ -1,0 +1,59 @@
+{% extends "control/base.html" %}
+{% block titulo %}{{ cfg.titulo }}{% endblock %}
+{% block encabezado %}{{ cfg.titulo }}{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <form method="get" class="buscador" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar {{ cfg.titulo|lower }}…" aria-label="Buscar">
+    <button class="btn btn-sec" type="submit">Buscar</button>
+    {% if q %}<a class="btn btn-link" href="{% url 'listado' modulo %}">Limpiar</a>{% endif %}
+  </form>
+  {% if puede_crear %}
+    <a class="btn btn-pri" href="{% url 'crear' modulo %}">+ Nuevo {{ cfg.singular }}</a>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <p class="conteo">{{ pagina.paginator.count }} registro{{ pagina.paginator.count|pluralize }}{% if q %} para “{{ q }}”{% endif %}</p>
+  {% if filas %}
+  <div class="tabla-wrap">
+    <table class="tabla">
+      <thead><tr>
+        {% for e in encabezados %}<th>{{ e }}</th>{% endfor %}
+        {% if puede_editar or puede_eliminar or cfg.acciones %}<th class="col-acciones">Acciones</th>{% endif %}
+      </tr></thead>
+      <tbody>
+      {% for f in filas %}
+        <tr>
+          {% for c in f.celdas %}
+            <td data-label="{{ encabezados|slice:forloop.counter|last }}">{% if c.clase %}<span class="{{ c.clase }}">{{ c.texto }}</span>{% else %}<span class="recorte">{{ c.texto }}</span>{% endif %}</td>
+          {% endfor %}
+          {% if puede_editar or puede_eliminar or cfg.acciones %}
+          <td class="col-acciones">
+            {% for nombre, etiqueta in cfg.acciones %}<a class="btn btn-link btn-sm" href="{% url nombre f.pk %}"{% if nombre == "receta_imprimir" %} target="_blank"{% endif %}>{{ etiqueta }}</a>{% endfor %}
+            {% if puede_editar %}<a class="btn btn-sec btn-sm" href="{% url 'editar' modulo f.pk %}">Editar</a>{% endif %}
+            {% if puede_eliminar %}
+              <form method="post" action="{% url 'eliminar' modulo f.pk %}?{{ request.GET.urlencode }}" class="form-eliminar" data-confirmar="¿Eliminar este registro de {{ cfg.singular }}? Esta acción no se puede deshacer.">
+                {% csrf_token %}<button class="btn btn-peligro btn-sm" type="submit">Eliminar</button>
+              </form>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagina.has_other_pages %}
+  <nav class="paginacion" aria-label="Paginación">
+    {% if pagina.has_previous %}<a href="?q={{ q|urlencode }}&page={{ pagina.previous_page_number }}">‹ Anterior</a>{% endif %}
+    <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a href="?q={{ q|urlencode }}&page={{ pagina.next_page_number }}">Siguiente ›</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+    <p class="vacio">No se encontraron registros.</p>
+  {% endif %}
+</div>
+{% endblock %}

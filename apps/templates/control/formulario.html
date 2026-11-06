@@ -1,0 +1,24 @@
+{% extends "control/base.html" %}
+{% block titulo %}{% if instancia %}Editar{% else %}Nuevo{% endif %} {{ cfg.singular }}{% endblock %}
+{% block encabezado %}{% if instancia %}Editar{% else %}Registrar{% endif %} {{ cfg.singular }}{% endblock %}
+{% block contenido %}
+<div class="panel panel-form">
+  {% if form.non_field_errors %}
+    <div class="alerta alerta-error">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</div>
+  {% endif %}
+  <form method="post" novalidate class="form grid-2" data-validar>
+    {% csrf_token %}
+    {% for campo in form %}
+      <div class="campo {% if campo.field.widget.input_type == 'textarea' or campo.name in 'descripcion recomendaciones observaciones indicaciones' %}col-completa{% endif %} {% if campo.errors %}con-error{% endif %}">
+        <label for="{{ campo.id_for_label }}">{{ campo.label }}{% if campo.field.required %} <span class="req">*</span>{% endif %}</label>
+        {{ campo }}
+        {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="acciones col-completa">
+      <a class="btn btn-sec" href="{% url 'listado' modulo %}">Cancelar</a>
+      <button class="btn btn-pri" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

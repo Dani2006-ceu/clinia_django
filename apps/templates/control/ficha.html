@@ -1,0 +1,130 @@
+{% extends "control/base.html" %}
+{% load static %}
+{% block titulo %}Ficha de {{ p.nombre_completo }}{% endblock %}
+{% block encabezado %}Ficha del paciente{% endblock %}
+{% block contenido %}
+<section class="ficha-cabecera panel">
+  <div class="ficha-avatar">{{ p.nombres|slice:":1" }}{{ p.apellidos|slice:":1" }}</div>
+  <div class="ficha-datos">
+    <h2>{{ p.nombre_completo }}</h2>
+    <p>DNI {{ p.dni }} · {{ p.edad }} años · Paciente desde {{ p.created_at|date:"d/m/Y" }}</p>
+    <p class="ficha-contacto-txt">{{ p.telefono }}{% if p.correo %} · {{ p.correo }}{% endif %} · {{ p.direccion }}</p>
+  </div>
+  <div class="ficha-acciones">
+    <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ p.whatsapp }}?text={{ 'Hola '|add:p.nombres|add:', le saludamos de Sonrisa Perfecta.'|urlencode }}">WhatsApp</a>
+    <a class="btn btn-sec btn-sm" href="tel:{{ p.telefono }}">Llamar</a>
+    {% if p.correo %}<a class="btn btn-sec btn-sm" href="mailto:{{ p.correo }}">Correo</a>{% endif %}
+    {% if perms.apps.change_paciente %}<a class="btn btn-sec btn-sm" href="{% url 'editar' 'pacientes' p.pk %}">Editar datos</a>{% endif %}
+    {% if ver_odontograma %}<a class="btn btn-pri btn-sm" href="{% url 'odontograma' p.pk %}">Odontograma</a>{% endif %}
+  </div>
+</section>
+
+{% if ver_antecedentes %}
+  {% if antecedente and antecedente.tiene_alertas %}
+    <div class="alerta alerta-error alerta-clinica">
+      <strong>Alerta médica:</strong>
+      {% if antecedente.alergias %} Alergias: {{ antecedente.alergias }}.{% endif %}
+      {% if antecedente.enfermedades %} Enfermedades: {{ antecedente.enfermedades }}.{% endif %}
+      {% if antecedente.embarazo %} Embarazo o lactancia.{% endif %}
+    </div>
+  {% elif not antecedente %}
+    <div class="alerta alerta-info">Este paciente no tiene antecedentes médicos registrados.
+      {% if perms.apps.add_antecedente %}<a href="{% url 'crear' 'antecedentes' %}">Registrar anamnesis</a>{% endif %}</div>
+  {% endif %}
+{% endif %}
+
+<section class="tarjetas">
+  {% if citas is not None %}
+  <div class="tarjeta"><span class="tarjeta-titulo">Citas registradas</span><span class="tarjeta-valor">{{ citas|length }}</span>
+    <span class="tarjeta-detalle">{% if proxima %}Próxima: {{ proxima.fecha|date:"d/m/Y" }} {{ proxima.hora|time:"H:i" }}{% else %}Sin citas próximas{% endif %}</span></div>
+  {% endif %}
+  {% if tratamientos is not None %}
+  <div class="tarjeta"><span class="tarjeta-titulo">Total en tratamientos</span><span class="tarjeta-valor">S/ {{ total_tratamientos|floatformat:2 }}</span>
+    <span class="tarjeta-detalle">{{ tratamientos|length }} tratamiento{{ tratamientos|length|pluralize }}</span></div>
+  <div class="tarjeta"><span class="tarjeta-titulo">Pagado</span><span class="tarjeta-valor">S/ {{ total_pagado|floatformat:2 }}</span>
+    <span class="tarjeta-detalle">Abonos registrados en caja</span></div>
+  <div class="tarjeta {% if saldo > 0 %}tarjeta-alerta{% endif %}"><span class="tarjeta-titulo">Saldo pendiente</span><span class="tarjeta-valor">S/ {{ saldo|floatformat:2 }}</span>
+    <span class="tarjeta-detalle">{% if saldo > 0 %}Por cobrar{% else %}Al día{% endif %}</span></div>
+  {% endif %}
+</section>
+
+<div class="grid-dos">
+  {% if ver_antecedentes and antecedente %}
+  <div class="panel">
+    <div class="panel-titulo"><h2>Antecedentes médicos</h2>
+      {% if perms.apps.change_antecedente %}<a class="btn btn-link btn-sm" href="{% url 'editar' 'antecedentes' antecedente.pk %}">Editar</a>{% endif %}</div>
+    <dl class="datos">
+      <dt>Alergias</dt><dd>{{ antecedente.alergias|default:"Ninguna" }}</dd>
+      <dt>Enfermedades</dt><dd>{{ antecedente.enfermedades|default:"Ninguna" }}</dd>
+      <dt>Medicamentos</dt><dd>{{ antecedente.medicamentos|default:"Ninguno" }}</dd>
+      <dt>Cirugías</dt><dd>{{ antecedente.cirugias|default:"Ninguna" }}</dd>
+      <dt>Embarazo / lactancia</dt><dd>{{ antecedente.embarazo|yesno:"Sí,No" }}</dd>
+      <dt>Fuma</dt><dd>{{ antecedente.fuma|yesno:"Sí,No" }}</dd>
+    </dl>
+  </div>
+  {% endif %}
+  {% if ver_odontograma %}
+  <div class="panel">
+    <div class="panel-titulo"><h2>Odontograma</h2><a class="btn btn-link btn-sm" href="{% url 'odontograma' p.pk %}">Abrir</a></div>
+    {% if odonto_resumen %}
+      <ul class="chips">{% for e in odonto_resumen %}<li class="chip chip-{{ e.estado|slugify }}">{{ e.estado }}: {{ e.n }}</li>{% endfor %}</ul>
+    {% else %}<p class="vacio">Todas las piezas registradas como sanas.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if citas is not None %}
+<div class="panel">
+  <h2>Historial de citas</h2>
+  {% if citas %}<div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Odontólogo</th><th>Motivo</th><th>Estado</th></tr></thead>
+    <tbody>{% for c in citas %}<tr><td data-label="Fecha">{{ c.fecha|date:"d/m/Y" }}</td><td data-label="Hora">{{ c.hora|time:"H:i" }}</td>
+      <td data-label="Odontólogo">{{ c.odontologo }}</td><td data-label="Motivo">{{ c.motivo }}</td>
+      <td data-label="Estado"><span class="badge badge-{{ c.estado|slugify }}">{{ c.estado }}</span></td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="vacio">Sin citas.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if diagnosticos is not None %}
+<div class="panel">
+  <h2>Diagnósticos</h2>
+  {% if diagnosticos %}<ul class="linea-tiempo">{% for d in diagnosticos %}
+    <li><span class="lt-fecha">{{ d.fecha|date:"d/m/Y" }}</span><strong>{{ d.descripcion }}</strong>
+      {% if d.recomendaciones %}<small>{{ d.recomendaciones }}</small>{% endif %}<small>{{ d.cita.odontologo }}</small></li>
+  {% endfor %}</ul>{% else %}<p class="vacio">Sin diagnósticos.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if tratamientos is not None %}
+<div class="panel">
+  <h2>Tratamientos y estado de cuenta</h2>
+  {% if tratamientos %}<div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Tratamiento</th><th>Inicio</th><th>Estado</th><th>Costo</th><th>Pagado</th><th>Saldo</th></tr></thead>
+    <tbody>{% for t in tratamientos %}<tr><td data-label="Tratamiento">{{ t.nombre }}</td><td data-label="Inicio">{{ t.fecha_inicio|date:"d/m/Y" }}</td>
+      <td data-label="Estado"><span class="badge badge-{{ t.estado|slugify }}">{{ t.estado }}</span></td>
+      <td data-label="Costo">S/ {{ t.costo|floatformat:2 }}</td><td data-label="Pagado">S/ {{ t.pagado_calc|floatformat:2 }}</td>
+      <td data-label="Saldo">{% if t.estado == "Pendiente" %}<span class="badge">Presupuesto</span>{% else %}S/ {{ t.saldo|floatformat:2 }}{% endif %}</td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="vacio">Sin tratamientos.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="grid-dos">
+  {% if recetas is not None %}
+  <div class="panel">
+    <h2>Recetas</h2>
+    {% if recetas %}<ul class="lista-simple">{% for r in recetas %}
+      <li><span><strong>{{ r.medicamento }}</strong> · {{ r.dosis }} · {{ r.frecuencia }}<small>{{ r.fecha_emision|date:"d/m/Y" }}</small></span>
+        <a class="btn btn-link btn-sm" target="_blank" href="{% url 'receta_imprimir' r.pk %}">Imprimir</a></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">Sin recetas.</p>{% endif %}
+  </div>
+  {% endif %}
+  {% if pagos is not None %}
+  <div class="panel">
+    <h2>Pagos</h2>
+    {% if pagos %}<ul class="lista-simple">{% for g in pagos %}
+      <li><span><strong>S/ {{ g.monto|floatformat:2 }}</strong> · {{ g.metodo }} · {{ g.tratamiento.nombre }}<small>{{ g.fecha|date:"d/m/Y" }} · {{ g.comprobante }} {{ g.numero_comprobante }}</small></span></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">Sin pagos.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{{ cfg.titulo }} - Sonrisa Perfecta</title>
+  <link rel="stylesheet" href="{% static 'control/css/style.css' %}">
+</head>
+<body class="impresion">
+  <div class="no-imprimir barra-impresion">
+    <button class="btn btn-pri" type="button" data-imprimir>Imprimir / Guardar como PDF</button>
+    <button class="btn btn-sec" type="button" onclick="window.close()">Cerrar</button>
+    <small>En el diálogo de impresión elija “Guardar como PDF” como destino.</small>
+  </div>
+
+  <article class="hoja">
+    <header class="hoja-cabecera">
+      <div>
+        <h1>🦷 Sonrisa Perfecta</h1>
+        <p>Consultorio odontológico</p>
+      </div>
+      <div class="hoja-meta">
+        <strong>{{ cfg.titulo }}</strong>
+        <span>Generado: {{ generado|date:"d/m/Y H:i" }}</span>
+        <span>Por: {{ user.get_full_name|default:user.username }}</span>
+      </div>
+    </header>
+
+    <p class="hoja-filtros"><strong>Filtros:</strong>
+      {% for etq, v in filtros %}{{ etq }}: {{ v }}{% if not forloop.last %} · {% endif %}{% empty %}Ninguno (todos los registros){% endfor %}
+    </p>
+
+    <table class="tabla tabla-impresion">
+      <thead><tr>{% for e in encabezados %}<th>{{ e }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for f in filas %}
+        <tr>{% for c in f.celdas %}<td>{{ c.texto|linebreaksbr }}</td>{% endfor %}</tr>
+      {% empty %}
+        <tr><td colspan="{{ encabezados|length }}">Sin registros.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <footer class="hoja-pie">
+      <span>Total de registros: {{ cantidad }}</span>
+      {% if total %}<span>Importe total: <strong>{{ total }}</strong></span>{% endif %}
+      <span class="confidencial">Documento confidencial — contiene datos personales y clínicos protegidos.</span>
+    </footer>
+  </article>
+  <script src="{% static 'control/js/app.js' %}"></script>
+</body>
+</html>

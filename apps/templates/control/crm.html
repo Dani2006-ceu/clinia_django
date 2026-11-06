@@ -1,0 +1,88 @@
+{% extends "control/base.html" %}
+{% block titulo %}CRM{% endblock %}
+{% block encabezado %}CRM · Seguimiento de pacientes{% endblock %}
+{% block contenido %}
+<section class="tarjetas">
+  {% if por_confirmar is not None %}
+  <div class="tarjeta"><span class="tarjeta-titulo">Citas por confirmar</span><span class="tarjeta-valor">{{ por_confirmar|length }}</span><span class="tarjeta-detalle">Próximos 3 días</span></div>
+  <div class="tarjeta"><span class="tarjeta-titulo">Pacientes inactivos</span><span class="tarjeta-valor">{{ inactivos|length }}</span><span class="tarjeta-detalle">Más de 6 meses sin atención</span></div>
+  <div class="tarjeta"><span class="tarjeta-titulo">Tasa de asistencia</span><span class="tarjeta-valor">{% if asistencia is not None %}{{ asistencia }}%{% else %}—{% endif %}</span><span class="tarjeta-detalle">Últimos 90 días</span></div>
+  {% endif %}
+  {% if deudores is not None %}
+  <div class="tarjeta {% if deuda_total > 0 %}tarjeta-alerta{% endif %}"><span class="tarjeta-titulo">Cuentas por cobrar</span><span class="tarjeta-valor">S/ {{ deuda_total|floatformat:2 }}</span><span class="tarjeta-detalle">{{ deudores|length }} tratamiento{{ deudores|length|pluralize }} con saldo</span></div>
+  {% endif %}
+</section>
+
+{% if por_confirmar is not None %}
+<div class="panel">
+  <h2>Citas por confirmar</h2>
+  <p class="subtitulo">Pendientes de hoy a dos días. Envíe un recordatorio por WhatsApp.</p>
+  {% if por_confirmar %}<div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Odontólogo</th><th class="col-acciones">Contactar</th></tr></thead>
+    <tbody>{% for c in por_confirmar %}<tr>
+      <td data-label="Fecha">{{ c.fecha|date:"D d/m" }}</td><td data-label="Hora">{{ c.hora|time:"H:i" }}</td>
+      <td data-label="Paciente"><a href="{% url 'ficha' c.paciente.pk %}">{{ c.paciente.nombre_completo }}</a></td><td data-label="Odontólogo">{{ c.odontologo }}</td>
+      <td class="col-acciones">
+        <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ c.paciente.whatsapp }}?text={{ c.mensaje|urlencode }}">WhatsApp</a>
+        {% if perms.apps.change_cita %}<a class="btn btn-sec btn-sm" href="{% url 'editar' 'citas' c.pk %}">Confirmar</a>{% endif %}
+      </td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="vacio">No hay citas pendientes de confirmar.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="grid-dos">
+  {% if inactivos is not None %}
+  <div class="panel">
+    <h2>Pacientes para control</h2>
+    <p class="subtitulo">Última atención hace más de 6 meses y sin cita programada.</p>
+    {% if inactivos %}<ul class="lista-simple">{% for p in inactivos %}
+      <li><span><a href="{% url 'ficha' p.pk %}"><strong>{{ p.nombre_completo }}</strong></a><small>Última atención: {{ p.ultima|date:"d/m/Y" }} · {{ p.telefono }}</small></span>
+        <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ p.whatsapp }}?text={{ 'Hola '|add:p.nombres|add:', ya le toca su control dental en Sonrisa Perfecta. ¿Le reservamos una cita?'|urlencode }}">WhatsApp</a></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">No hay pacientes inactivos.</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h2>Cumpleaños del mes</h2>
+    {% if cumpleanos %}<ul class="lista-simple">{% for p in cumpleanos %}
+      <li><span><a href="{% url 'ficha' p.pk %}"><strong>{{ p.nombre_completo }}</strong></a><small>{{ p.fecha_nacimiento|date:"d \d\e F" }}{% if p.fecha_nacimiento.day == hoy.day %} · ¡Hoy!{% endif %}</small></span>
+        <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ p.whatsapp }}?text={{ '¡Feliz cumpleaños, '|add:p.nombres|add:'! Le desea todo el equipo de Sonrisa Perfecta.'|urlencode }}">Saludar</a></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">Nadie cumple años este mes.</p>{% endif %}
+  </div>
+</div>
+
+<div class="grid-dos">
+  {% if atrasados is not None %}
+  <div class="panel">
+    <h2>Tratamientos sin terminar</h2>
+    <p class="subtitulo">En proceso con fecha vencida o presupuestos sin aceptar (más de 15 días).</p>
+    {% if atrasados %}<ul class="lista-simple">{% for t in atrasados %}
+      <li><span><a href="{% url 'ficha' t.diagnostico.cita.paciente.pk %}"><strong>{{ t.diagnostico.cita.paciente.nombre_completo }}</strong></a> · {{ t.nombre }}
+        <small><span class="badge badge-{{ t.estado|slugify }}">{{ t.estado }}</span> Inicio {{ t.fecha_inicio|date:"d/m/Y" }}{% if t.fecha_fin %} · Fin previsto {{ t.fecha_fin|date:"d/m/Y" }}{% endif %}</small></span>
+        <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="https://wa.me/{{ t.diagnostico.cita.paciente.whatsapp }}?text={{ 'Hola '|add:t.diagnostico.cita.paciente.nombres|add:', le escribimos de Sonrisa Perfecta para continuar su tratamiento.'|urlencode }}">WhatsApp</a></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">No hay tratamientos atrasados.</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if deudores is not None %}
+  <div class="panel">
+    <h2>Saldos pendientes</h2>
+    {% if deudores %}<ul class="lista-simple">{% for t in deudores %}
+      <li><span><a href="{% url 'ficha' t.diagnostico.cita.paciente.pk %}"><strong>{{ t.diagnostico.cita.paciente.nombre_completo }}</strong></a> · {{ t.nombre }}
+        <small>Costo S/ {{ t.costo|floatformat:2 }} · Pagado S/ {{ t.pagado_calc|floatformat:2 }}</small></span>
+        <strong class="monto-alerta">S/ {{ t.saldo_calc|floatformat:2 }}</strong></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">No hay saldos pendientes.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if embudo %}
+<div class="panel">
+  <h2>Embudo de citas (últimos 90 días)</h2>
+  <ul class="barras">{% for c in embudo %}
+    <li><span class="barra-etq">{{ c.estado }}</span><span class="barra"><span class="barra-relleno relleno-{{ c.clase }}" style="width: {{ c.pct }}%"></span></span><span class="barra-num">{{ c.n }}</span></li>
+  {% endfor %}</ul>
+  <p class="subtitulo">{{ total_90 }} cita{{ total_90|pluralize }} en el periodo.</p>
+</div>
+{% endif %}
+{% endblock %}

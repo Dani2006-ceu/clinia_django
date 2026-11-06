@@ -1,0 +1,61 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Inicio{% endblock %} | Sonrisa Perfecta</title>
+  <link rel="icon" type="image/png" href="{% static 'control/img/' %}logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'control/css/style.css' %}">
+</head>
+<body>
+{% block cuerpo %}
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <a class="marca" href="{% url 'inicio' %}">
+      <img class="logo" src="{% static 'control/img/' %}logo.png" alt="Sonrisa Perfecta">
+      <span><strong>Sonrisa Perfecta</strong><small>Consultorio odontológico</small></span>
+    </a>
+    <nav>
+      <a href="{% url 'inicio' %}" class="{% if request.resolver_match.url_name == 'inicio' %}activo{% endif %}"><img class="ico" src="{% static 'control/img/' %}logo.png" alt="">Dashboard</a>
+      {% if perms.apps.view_cita %}<a href="{% url 'agenda' %}" class="{% if request.resolver_match.url_name == 'agenda' %}activo{% endif %}"><img class="ico" src="{% static 'control/img/' %}agenda.png" alt="">Agenda</a>{% endif %}
+      {% if perms.apps.view_paciente %}<a href="{% url 'crm' %}" class="{% if request.resolver_match.url_name == 'crm' %}activo{% endif %}"><img class="ico" src="{% static 'control/img/' %}crm.png" alt="">CRM</a>{% endif %}
+      {% if menu_modulos %}<p class="menu-titulo">Gestión</p>{% endif %}
+      {% for m in menu_modulos %}
+        <a href="{% url 'listado' m.slug %}" class="{% if request.resolver_match.kwargs.modulo == m.slug %}activo{% endif %}"><img class="ico" src="{% static 'control/img/' %}{{ m.slug }}.png" alt="">{{ m.titulo }}</a>
+      {% endfor %}
+      {% if menu_reportes %}<p class="menu-titulo">Reportes</p>{% endif %}
+      {% for r in menu_reportes %}
+        <a href="{% url 'reporte' r.slug %}" class="{% if request.resolver_match.kwargs.tipo == r.slug %}activo{% endif %}"><img class="ico" src="{% static 'control/img/' %}{{ r.slug }}.png" alt="">{{ r.titulo }}</a>
+      {% endfor %}
+    </nav>
+  </aside>
+
+  <div class="contenido">
+    <header class="topbar">
+      <button class="btn-menu" id="btnMenu" type="button" aria-label="Abrir menú">☰</button>
+      <h1>{% block encabezado %}{% endblock %}</h1>
+      <div class="usuario">
+        <span>{{ user.get_full_name|default:user.username }}
+          <small>{{ user.groups.first.name|default:"Sin rol asignado" }}</small></span>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="btn btn-sec btn-sm" type="submit">Salir</button>
+        </form>
+      </div>
+    </header>
+
+    <main>
+      {% for m in messages %}
+        <div class="alerta alerta-{{ m.tags }}">{{ m }}<button type="button" class="cerrar" aria-label="Cerrar">×</button></div>
+      {% endfor %}
+      {% block contenido %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+<script src="{% static 'control/js/app.js' %}"></script>
+</body>
+</html>

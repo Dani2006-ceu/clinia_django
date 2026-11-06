@@ -1,0 +1,42 @@
+{% extends "control/base.html" %}
+{% block titulo %}{{ cfg.titulo }}{% endblock %}
+{% block encabezado %}{{ cfg.titulo }}{% endblock %}
+{% block contenido %}
+<div class="panel">
+  <form method="get" class="form filtros" novalidate>
+    {% for campo in form %}
+      <div class="campo {% if campo.errors %}con-error{% endif %}">
+        <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+        {{ campo }}
+        {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="acciones">
+      <a class="btn btn-link" href="{% url 'reporte' tipo %}">Limpiar</a>
+      <button class="btn btn-pri" type="submit">Filtrar</button>
+    </div>
+  </form>
+  {% if form.non_field_errors %}<div class="alerta alerta-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+</div>
+
+<div class="panel">
+  <div class="barra-acciones">
+    <p class="conteo">{{ cantidad }} resultado{{ cantidad|pluralize }}{% if total %} · Total: <strong>{{ total }}</strong>{% endif %}</p>
+    <a class="btn btn-pri" href="{% url 'impresion' tipo %}?{{ query }}" target="_blank" rel="noopener">Imprimir / Guardar PDF</a>
+  </div>
+  {% if filas %}
+  <div class="tabla-wrap">
+    <table class="tabla">
+      <thead><tr>{% for e in encabezados %}<th>{{ e }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for f in filas %}
+        <tr>{% for c in f.celdas %}<td data-label="{{ encabezados|slice:forloop.counter|last }}">{% if c.clase %}<span class="{{ c.clase }}">{{ c.texto }}</span>{% else %}{{ c.texto|linebreaksbr }}{% endif %}</td>{% endfor %}</tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="vacio">No hay registros con los filtros seleccionados.</p>
+  {% endif %}
+</div>
+{% endblock %}

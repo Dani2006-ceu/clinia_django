@@ -1,0 +1,74 @@
+{% extends "control/base.html" %}
+{% block titulo %}Odontograma de {{ p.nombre_completo }}{% endblock %}
+{% block encabezado %}Odontograma{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <div><h2 class="sin-margen">{{ p.nombre_completo }}</h2><p class="subtitulo">DNI {{ p.dni }} · {{ p.edad }} años · Numeración FDI</p></div>
+  <a class="btn btn-sec" href="{% url 'ficha' p.pk %}">← Volver a la ficha</a>
+</div>
+
+<div class="panel">
+  <ul class="leyenda">{% for e, c in estados %}<li><span class="diente-mini d-{{ c }}"></span>{{ e }}</li>{% endfor %}</ul>
+  <div class="odonto">
+    <p class="odonto-arcada">Arcada superior</p>
+    <div class="odonto-fila">
+      {% for d in superior %}
+        <button type="button" class="diente d-{{ d.clase }}{% if forloop.counter == 8 %} medio{% endif %}" data-pieza="{{ d.n }}" data-estado="{{ d.estado }}"
+                data-caras="{{ d.reg.caras|default:'' }}" data-obs="{{ d.reg.observacion|default:'' }}" title="Pieza {{ d.n }}: {{ d.estado }}" {% if not puede_editar %}disabled{% endif %}>
+          <span class="diente-corona"></span><span class="diente-num">{{ d.n }}</span>
+        </button>
+      {% endfor %}
+    </div>
+    <div class="odonto-fila inferior">
+      {% for d in inferior %}
+        <button type="button" class="diente d-{{ d.clase }}{% if forloop.counter == 8 %} medio{% endif %}" data-pieza="{{ d.n }}" data-estado="{{ d.estado }}"
+                data-caras="{{ d.reg.caras|default:'' }}" data-obs="{{ d.reg.observacion|default:'' }}" title="Pieza {{ d.n }}: {{ d.estado }}" {% if not puede_editar %}disabled{% endif %}>
+          <span class="diente-num">{{ d.n }}</span><span class="diente-corona"></span>
+        </button>
+      {% endfor %}
+    </div>
+    <p class="odonto-arcada">Arcada inferior</p>
+  </div>
+</div>
+
+<div class="grid-dos">
+  {% if puede_editar %}
+  <div class="panel" id="panelPieza">
+    <h2>Registrar estado de pieza</h2>
+    <p class="subtitulo">Haga clic en un diente para seleccionarlo.</p>
+    <form method="post" class="form grid-2" novalidate>
+      {% csrf_token %}
+      {% for campo in form %}
+        <div class="campo {% if campo.errors %}con-error{% endif %}">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}
+          {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+          {% if campo.help_text %}<small class="ayuda">{{ campo.help_text }}</small>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="acciones col-completa"><button class="btn btn-pri" type="submit">Guardar pieza</button></div>
+    </form>
+  </div>
+  {% endif %}
+  <div class="panel">
+    <h2>Hallazgos registrados</h2>
+    {% if registros %}<ul class="lista-simple">{% for r in registros %}
+      <li><span><strong>Pieza {{ r.pieza }}</strong> · <span class="chip chip-{{ r.estado|slugify }}">{{ r.estado }}</span>
+        {% if r.caras %} · Caras {{ r.caras }}{% endif %}<small>{{ r.observacion|default:"" }} {{ r.fecha|date:"d/m/Y" }}</small></span></li>
+    {% endfor %}</ul>{% else %}<p class="vacio">Todas las piezas están sanas.</p>{% endif %}
+  </div>
+</div>
+
+<script>
+document.querySelectorAll(".diente:not([disabled])").forEach((d) => {
+  d.addEventListener("click", () => {
+    document.querySelectorAll(".diente.sel").forEach((x) => x.classList.remove("sel"));
+    d.classList.add("sel");
+    document.getElementById("id_pieza").value = d.dataset.pieza;
+    document.getElementById("id_estado").value = d.dataset.estado;
+    document.getElementById("id_caras").value = d.dataset.caras;
+    document.getElementById("id_observacion").value = d.dataset.obs;
+    document.getElementById("panelPieza").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+});
+</script>
+{% endblock %}

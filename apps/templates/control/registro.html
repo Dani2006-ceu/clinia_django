@@ -1,0 +1,33 @@
+{% extends "control/base.html" %}
+{% load static %}
+{% block titulo %}Crear cuenta{% endblock %}
+{% block cuerpo %}
+<div class="auth">
+  {% include "control/_auth_arte.html" %}
+  <div class="auth-lado">
+  <div class="auth-card auth-ancho">
+    <div class="auth-marca"><img class="logo" src="{% static 'control/img/' %}logo.png" alt="Sonrisa Perfecta">
+      <h1>Crear cuenta</h1>
+      <p>Las cuentas nuevas se crean con el rol <strong>Recepcionista</strong>.
+         El administrador puede cambiar el rol después.</p>
+    </div>
+    {% if form.non_field_errors %}<div class="alerta alerta-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <form method="post" novalidate class="form grid-2">
+      {% csrf_token %}
+      {% for campo in form %}
+        <div class="campo {% if campo.errors %}con-error{% endif %}">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% for e in campo.errors %}<span class="error">{{ e }}</span>{% endfor %}
+          {% if campo.help_text and not campo.errors %}<small class="ayuda">{{ campo.help_text|safe }}</small>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="acciones col-completa">
+        <a class="btn btn-sec" href="{% url 'login' %}">Volver al login</a>
+        <button class="btn btn-pri" type="submit">Registrarme</button>
+      </div>
+    </form>
+  </div>
+  </div>
+</div>
+{% endblock %}

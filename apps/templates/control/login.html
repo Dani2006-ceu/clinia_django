@@ -1,0 +1,52 @@
+{% extends "control/base.html" %}
+{% load static %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block cuerpo %}
+<div class="auth">
+  {% include "control/_auth_arte.html" %}
+
+  <div class="auth-lado">
+    <div class="auth-card">
+      <div class="auth-marca">
+        <span class="auth-candado">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <h1>Bienvenido de nuevo</h1>
+        <p>Accede al sistema de gestión clínica.</p>
+      </div>
+
+      {% for m in messages %}<div class="alerta alerta-{{ m.tags }}">{{ m }}</div>{% endfor %}
+      {% if form.non_field_errors %}
+        <div class="alerta alerta-error">Usuario o contraseña incorrectos.</div>
+      {% endif %}
+
+      <form method="post" novalidate class="form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <label for="{{ form.username.id_for_label }}">Usuario</label>
+        <div class="campo-icono">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          {{ form.username }}
+        </div>
+
+        <label for="{{ form.password.id_for_label }}">Contraseña</label>
+        <div class="campo-icono">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          {{ form.password }}
+          <button type="button" class="ver-clave ojo" data-objetivo="{{ form.password.id_for_label }}" aria-label="Mostrar contraseña">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+
+        <label class="check">{{ form.recordar }} Mantener mi sesión abierta</label>
+        <button class="btn btn-pri btn-bloque" type="submit">
+          Ingresar
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+      <p class="auth-pie">¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate aquí</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

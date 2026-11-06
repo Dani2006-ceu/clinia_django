@@ -1,0 +1,56 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Receta N.º {{ r.pk }} - Sonrisa Perfecta</title>
+  <link rel="icon" type="image/png" href="{% static 'control/img/logo.png' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'control/css/style.css' %}">
+</head>
+<body class="impresion">
+  <div class="no-imprimir barra-impresion">
+    <button class="btn btn-pri" type="button" data-imprimir>Imprimir / Guardar como PDF</button>
+    <button class="btn btn-sec" type="button" onclick="window.close()">Cerrar</button>
+  </div>
+
+  <article class="hoja receta">
+    <header class="receta-cab">
+      <img src="{% static 'control/img/logo.png' %}" alt="">
+      <div><h1>Sonrisa Perfecta</h1><p>Consultorio odontológico</p></div>
+      <div class="receta-num"><strong>RECETA N.º {{ r.pk|stringformat:"06d" }}</strong><span>{{ r.fecha_emision|date:"d/m/Y" }}</span></div>
+    </header>
+
+    <section class="receta-paciente">
+      <div><small>Paciente</small><strong>{{ p.nombre_completo }}</strong></div>
+      <div><small>DNI</small><strong>{{ p.dni }}</strong></div>
+      <div><small>Edad</small><strong>{{ p.edad }} años</strong></div>
+      <div><small>Diagnóstico</small><strong>{{ r.diagnostico.descripcion|truncatechars:80 }}</strong></div>
+    </section>
+    {% if antecedente.alergias %}<p class="receta-alergia"><strong>Alergias:</strong> {{ antecedente.alergias }}</p>{% endif %}
+
+    <section class="receta-cuerpo">
+      <span class="receta-rx">Rp/</span>
+      <ol>
+        <li><strong>{{ r.medicamento }}</strong>
+          <span>{{ r.dosis }} · {{ r.frecuencia }} · durante {{ r.duracion }}</span>
+          {% if r.indicaciones %}<em>{{ r.indicaciones }}</em>{% endif %}</li>
+        {% for x in otras %}
+        <li><strong>{{ x.medicamento }}</strong>
+          <span>{{ x.dosis }} · {{ x.frecuencia }} · durante {{ x.duracion }}</span>
+          {% if x.indicaciones %}<em>{{ x.indicaciones }}</em>{% endif %}</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <footer class="receta-firma">
+      <div class="firma-linea"></div>
+      <strong>Dr(a). {{ o.nombres }} {{ o.apellidos }}</strong>
+      <span>{{ o.especialidad.nombre }} · COP {{ o.numero_colegiatura }}</span>
+    </footer>
+    <p class="receta-pie">Documento generado el {{ generado|date:"d/m/Y H:i" }}. Válido con firma y sello del profesional.</p>
+  </article>
+  <script src="{% static 'control/js/app.js' %}"></script>
+</body>
+</html>

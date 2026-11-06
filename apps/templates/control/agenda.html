@@ -1,0 +1,47 @@
+{% extends "control/base.html" %}
+{% block titulo %}Agenda{% endblock %}
+{% block encabezado %}Agenda semanal{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <div class="agenda-nav">
+    <a class="btn btn-sec btn-sm" href="?semana={{ anterior }}&odontologo={{ odontologo_id }}">‹ Anterior</a>
+    <a class="btn btn-sec btn-sm" href="?semana={{ actual }}&odontologo={{ odontologo_id }}">Hoy</a>
+    <a class="btn btn-sec btn-sm" href="?semana={{ siguiente }}&odontologo={{ odontologo_id }}">Siguiente ›</a>
+    <strong>{{ dias.0|date:"d M" }} – {{ dias|last|date:"d M Y" }}</strong>
+    <span class="subtitulo">{{ total }} cita{{ total|pluralize }}</span>
+  </div>
+  <form method="get" class="buscador">
+    <input type="hidden" name="semana" value="{{ dias.0|date:'Y-m-d' }}">
+    <select name="odontologo" onchange="this.form.submit()" aria-label="Filtrar por odontólogo">
+      <option value="">Todos los odontólogos</option>
+      {% for o in odontologos %}<option value="{{ o.pk }}" {% if o.pk|stringformat:"s" == odontologo_id %}selected{% endif %}>{{ o }}</option>{% endfor %}
+    </select>
+    {% if puede_crear %}<a class="btn btn-pri" href="{% url 'crear' 'citas' %}">+ Nueva cita</a>{% endif %}
+  </form>
+</div>
+
+<div class="panel agenda-wrap">
+  <table class="agenda">
+    <thead><tr><th class="ag-hora"></th>
+      {% for d in dias %}<th class="{% if d == hoy %}ag-hoy{% endif %}"><span>{{ d|date:"D" }}</span><strong>{{ d|date:"d" }}</strong></th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for f in filas %}
+      <tr><th class="ag-hora">{{ f.hora }}</th>
+        {% for c in f.celdas %}
+          <td class="{% if c.dia == hoy %}ag-hoy{% endif %}">
+            {% for cita in c.citas %}
+              {% if puede_editar %}<a href="{% url 'editar' 'citas' cita.pk %}"{% else %}<div{% endif %} class="ag-cita ag-{{ cita.estado|slugify }}" title="{{ cita.motivo }}">
+                <strong>{{ cita.hora|time:"H:i" }} {{ cita.paciente.nombre_completo }}</strong>
+                <small>{{ cita.odontologo.apellidos }} · {{ cita.motivo|truncatechars:24 }}</small>
+              {% if puede_editar %}</a>{% else %}</div>{% endif %}
+            {% endfor %}
+          </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<ul class="leyenda"><li><span class="diente-mini ag-pendiente"></span>Pendiente</li><li><span class="diente-mini ag-confirmada"></span>Confirmada</li>
+  <li><span class="diente-mini ag-atendida"></span>Atendida</li><li><span class="diente-mini ag-cancelada"></span>Cancelada</li></ul>
+{% endblock %}
